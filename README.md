@@ -156,7 +156,7 @@ Programs, FAQs, tutors, articles, expos, stories, and partners are read through 
 
 ## Deploy
 
-Vercel: set the env vars, then deploy. `bun run build` is the production build.
+Vercel: set the env vars, then deploy. `bun run build` is the production build. It points `SWC_NATIVE_BINDING_CACHE` at `/tmp` because SWC (loaded by the next-intl plugin) refuses to unpack its native binary under Vercel's default `/vercel/.cache`; elsewhere SWC falls back to the user cache.
 
 Docker: the app starts with `bun run build` and `bun start` on port 3000. Use `oven/bun:1.3.5`, copy the lockfile, and run `bun install --frozen-lockfile` before the build. A managed host is the simpler path until a standalone output is turned on.
 
