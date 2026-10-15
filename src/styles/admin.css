@@ -1,0 +1,91 @@
+/* Editor-only states */
+.article-prose.ProseMirror img.ProseMirror-selectednode {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.article-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--ink-muted) 60%, transparent);
+}
+
+/* CMS shell */
+.cms h1,
+.cms h2,
+.cms h3 {
+  font-family: var(--font-cms);
+  letter-spacing: -0.025em;
+}
+
+.cms ::selection {
+  background: var(--cms-blue);
+  color: #fff;
+}
+
+.cms :focus-visible {
+  outline-color: var(--cms-blue);
+}
+
+/* The CMS runs at 87.5% of the browser's root size so dense screens fit at 100% zoom. */
+html:has(body.cms) {
+  font-size: 87.5%;
+}
+
+/* The site's base body rule is unlayered, so it would beat Tailwind's font and color utilities. */
+body.cms {
+  background: var(--cms-canvas);
+  color: var(--cms-ink);
+  font-family: var(--font-cms);
+}
+
+/* Login page: the CMS section labels settle onto the miniature site one by one. */
+@keyframes cms-tag-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.92);
+  }
+}
+
+/* Countdown bar on CMS toasts (see components/admin/toast.tsx). */
+@keyframes cms-toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes cms-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes cms-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Inside the CMS, code blocks and inline code use the logo palette too. */
+.cms .article-prose pre {
+  background: var(--cms-navy);
+  color: #ffffff;
+}
+
+.cms .article-prose code {
+  background: var(--cms-blue-10);
+}
+
+.cms .article-prose blockquote {
+  border-left-color: var(--cms-blue);
+  color: color-mix(in srgb, var(--cms-ink) 70%, transparent);
+}

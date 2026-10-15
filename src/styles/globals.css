@@ -1,0 +1,277 @@
+@import "tailwindcss";
+
+:root {
+  /* Logo mix: mark #253CA1 (primary), wordmark #929499 (secondary) */
+  --brand: #253ca1;
+  --brand-deep: #1a2b78;
+  --header: #2a2d34;
+  --brand-foreground: #ffffff;
+  --accent: #253ca1;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e9ecf5;
+  --logo: #929499;
+  --logo-soft: #eceeef;
+  --surface: #f4f5f7;
+  --surface-muted: #ffffff;
+  --ink: #1c1e26;
+  --ink-muted: #5c5f69;
+  --line: #e3e5e9;
+  --success: #166534;
+  --warning: #92400e;
+  --danger: #991b1b;
+  --header-h: 4rem;
+  --bar-h: 4.5rem;
+  --shadow: 0 18px 50px rgb(42 45 52 / 0.1);
+  --radius: 1.75rem;
+  --z-header: 40;
+  --z-bar: 45;
+  --z-float: 46;
+  --z-banner: 50;
+  --z-modal: 60;
+
+  /* CMS palette. Every value is the logo's royal blue (#253ca1) or slate gray (#929499),
+     mixed with white (tints) or black (shades). Nothing else is used. */
+  --cms-ink: #0d1538; /* blue 35%: text */
+  --cms-navy: #142159; /* blue 55%: dark cards, chart highlights */
+  --cms-navy-2: #1c2d79; /* blue 75%: raised on navy */
+  --cms-blue: #253ca1; /* logo blue */
+  --cms-blue-deep: #1c2d79; /* hover on blue */
+  --cms-blue-60: #7c8ac7; /* tint: charts on navy */
+  --cms-blue-20: #d3d8ec; /* tint: soft fills */
+  --cms-blue-10: #e9ecf6; /* tint: washes */
+  --cms-gray: #929499; /* logo gray */
+  --cms-gray-50: #c8cacc; /* tint: secondary text and bars on navy */
+  --cms-gray-25: #e4e4e6; /* tint: empty states, dividers */
+  --cms-canvas: #f4f5fa; /* blue 5%: the page behind the cards */
+  --cms-field: #f2f3f9; /* blue 6%: inputs, hovers, and tracks on white */
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-header: var(--header);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-logo: var(--logo);
+  --color-logo-soft: var(--logo-soft);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  --color-cms-ink: var(--cms-ink);
+  --color-cms-navy: var(--cms-navy);
+  --color-cms-navy-2: var(--cms-navy-2);
+  --color-cms-blue: var(--cms-blue);
+  --color-cms-blue-deep: var(--cms-blue-deep);
+  --color-cms-blue-60: var(--cms-blue-60);
+  --color-cms-blue-20: var(--cms-blue-20);
+  --color-cms-blue-10: var(--cms-blue-10);
+  --color-cms-gray: var(--cms-gray);
+  --color-cms-gray-50: var(--cms-gray-50);
+  --color-cms-gray-25: var(--cms-gray-25);
+  --color-cms-canvas: var(--cms-canvas);
+  --color-cms-field: var(--cms-field);
+  --font-cms: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: var(--radius);
+  --shadow-card: var(--shadow);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+::selection {
+  background: #253ca1;
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid #253ca1;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 0.75rem;
+  z-index: 70;
+  transform: translateY(-150%);
+  border-radius: 999px;
+  background: #fff;
+  color: #253ca1;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+/* Fills a hero indicator over one slide's dwell time; its end advances the carousel. */
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes route-dash {
+  to {
+    stroke-dashoffset: -160;
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+.interactive-lift {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .interactive-lift:hover {
+    transform: translateY(-0.3rem);
+    box-shadow: 0 18px 40px rgb(42 45 52 / 0.12);
+  }
+
+  .interactive-zoom {
+    transition: transform 500ms ease;
+  }
+
+  .interactive-zoom:hover {
+    transform: scale(1.04);
+  }
+}
+
+.accordion-content[data-state="open"] {
+  animation: accordion-down 220ms ease;
+}
+
+.accordion-content[data-state="closed"] {
+  animation: accordion-up 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* The header floats over the page (see sticky-header.tsx). The first block keeps its background
+   under the header but starts its content below it. Blocks marked data-own-nav-space pad themselves. */
+main > :nth-child(1 of :not(script)):not([data-own-nav-space])::before {
+  content: "";
+  display: block;
+  height: var(--header-h);
+}

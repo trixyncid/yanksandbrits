@@ -1,0 +1,419 @@
+// Better Auth owns User, Session, Account, and Verification.
+// Field names match its core schema; see src/lib/auth.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  editor
+}
+
+enum Locale {
+  id
+  en
+}
+
+enum ProgramCategory {
+  language
+  academic
+}
+
+enum ProgramFormat {
+  online
+  offline
+  hybrid
+}
+
+enum AdKind {
+  university
+  brand
+}
+
+enum ArticleStatus {
+  draft
+  published
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(editor)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  articles      Article[]
+  media         Media[]
+  assignedLeads Lead[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Article {
+  id             String        @id @default(cuid())
+  locale         Locale        @default(id)
+  slug           String
+  title          String
+  excerpt        String        @default("")
+  // Tiptap JSON is the source of truth. contentHtml is rendered from it on every save.
+  content        Json
+  contentHtml    String        @default("")
+  coverImage     String?
+  coverAlt       String?
+  category       String        @default("")
+  tags           String[]      @default([])
+  readingTime    Int           @default(1)
+  status         ArticleStatus @default(draft)
+  // A published article with a future date is scheduled.
+  publishedAt    DateTime?
+  seoTitle       String?
+  seoDescription String?
+  noindex        Boolean       @default(false)
+  authorId       String?
+  author         User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([locale, slug])
+  @@index([status, publishedAt])
+  @@map("article")
+}
+
+model Program {
+  id             String          @id @default(cuid())
+  locale         Locale          @default(id)
+  slug           String
+  // Lower numbers show first in the nav, the program list, and the footer.
+  sortOrder      Int             @default(0)
+  published      Boolean         @default(false)
+  category       ProgramCategory @default(language)
+  name           String
+  tag            String          @default("")
+  headline       String          @default("")
+  summary        String          @default("")
+  targetAudience String          @default("")
+  format         ProgramFormat   @default(hybrid)
+  formatLabel    String          @default("")
+  duration       String          @default("")
+  schedule       String          @default("")
+  level          String          @default("")
+  outcomes       String[]        @default([])
+  // Ordered modules: [{ "title": string, "body": string }]
+  syllabus       Json            @default("[]")
+  image          String?
+  imageAlt       String?
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([locale, slug])
+  @@index([locale, published, sortOrder])
+  @@map("program")
+}
+
+// Uploaded images, stored in Postgres and served from /media/<id> so they pass the site's
+// same-origin image policy and work on hosts with a read-only filesystem.
+model Media {
+  id           String   @id @default(cuid())
+  filename     String
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  // The file's bytes when stored in the database (no DigitalOcean Spaces configured).
+  data         Bytes?
+  // The object key in DigitalOcean Spaces when the file lives there. See src/lib/media/storage.ts.
+  storageKey   String?
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("media")
+}
+
+// One record per person. Text that changes by language lives in `content`:
+// { "id": { role, bio, specialisations[], countries[] }, "en": { ... } }
+model Counsellor {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  photo     String?
+  published Boolean  @default(true)
+  onDesk    Boolean  @default(true)
+  // Private: where new-lead alerts go (normalized 628…). Never sent to the public site.
+  whatsapp  String?
+  sortOrder Int      @default(0)
+  content   Json
+  leads     Lead[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, sortOrder])
+  @@map("counsellor")
+}
+
+// `content`: { "id": { role, bio, subjects[], education[], certifications[], experience, results }, "en": { ... } }
+model Tutor {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  photo     String?
+  published Boolean  @default(true)
+  featured  Boolean  @default(false)
+  sortOrder Int      @default(0)
+  // Program slugs this tutor teaches.
+  programs  String[] @default([])
+  languages String[] @default([])
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, sortOrder])
+  @@map("tutor")
+}
+
+// Sponsored placements. See docs/sponsorship.md for slots and creative specs.
+model Ad {
+  id         String   @id @default(cuid())
+  // Campaign id used in analytics and UTM tags.
+  slug       String   @unique
+  advertiser String
+  kind       AdKind   @default(brand)
+  // University details, used for the universities slot and its country filter.
+  country    String?
+  city       String?
+  majors     String[] @default([])
+  slots      String[]
+  // Program slugs to target on program pages. Empty shows everywhere the slot appears.
+  programs   String[] @default([])
+  // Inclusive dates in Medan time.
+  startsOn   DateTime @db.Date
+  endsOn     DateTime @db.Date
+  active     Boolean  @default(false)
+  weight     Int      @default(1)
+  href       String
+  image      String?
+  logo       String?
+  // { "id": { title, body, cta }, "en": { ... } }
+  copy       Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([active, endsOn])
+  @@map("ad")
+}
+
+// A student or parent quote for the home page. Publish only with written consent.
+model Testimonial {
+  id        String   @id @default(cuid())
+  quote     String
+  name      String
+  role      String   @default("")
+  photo     String?
+  published Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, sortOrder])
+  @@map("testimonial")
+}
+
+// Editable page content, one JSON document per page (e.g. key "home"). Validated in src/lib/home.
+model SiteContent {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+
+  @@map("site_content")
+}
+
+// An expo, fair, or briefing in the lineup on /expo. No date means "to be confirmed".
+model Expo {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  summary     String
+  audience    String    @default("")
+  // Topics shown as chips under "On the day".
+  covers      String[]  @default([])
+  image       String?
+  imageAlt    String?
+  startsAt    DateTime?
+  // Optional; a one-day event ends on its start day.
+  endsAt      DateTime?
+  venue       String    @default("")
+  city        String    @default("Medan")
+  // Optional outside sign-up page. Without one, "Register" opens the consultation form.
+  registerUrl String?
+  published   Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published, startsAt])
+  @@map("expo")
+}
+
+// A student's result for /success-stories. Published only with the student's written consent.
+model Story {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  studentName String
+  // The pull quote shown on cards, in the student's words.
+  headline    String
+  // Plain text; blank lines separate paragraphs.
+  body        String   @default("")
+  // A program slug (e.g. "ielts"), or empty when the story is not tied to one.
+  program     String   @default("")
+  scoreLabel  String   @default("")
+  scoreBefore String   @default("")
+  scoreAfter  String   @default("")
+  destination String   @default("")
+  country     String   @default("")
+  intake      String   @default("")
+  photo       String?
+  photoAlt    String?
+  // Required before publishing, with where the signed consent is kept.
+  consent     Boolean  @default(false)
+  consentNote String   @default("")
+  featured    Boolean  @default(false)
+  published   Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, sortOrder])
+  @@map("story")
+}
+
+// A question on /faq. Program pages show the ones tied to them plus the general ones.
+model Faq {
+  id            String   @id @default(cuid())
+  question      String
+  // Plain text; blank lines separate paragraphs.
+  answer        String
+  category      String   @default("General")
+  // Program slugs this answer belongs to. Empty means it applies to every program.
+  programs      String[] @default([])
+  showOnContact Boolean  @default(false)
+  published     Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([published, sortOrder])
+  @@map("faq")
+}
+
+enum LeadOrigin {
+  contact
+  whatsapp
+}
+
+// A consultation request from the website form. Personal data: visible to CMS users, deleted only by admins.
+// One row per WhatsApp number per week; a repeat submission updates the row (see src/lib/leads/store.ts).
+model Lead {
+  // A UUID, because the browser holds it between the two form steps.
+  id               String      @id @default(uuid())
+  locale           Locale
+  origin           LeadOrigin  @default(contact)
+  name             String
+  // Normalized to 628…
+  whatsapp         String
+  programs         String[]
+  // Attribution: last touch, plus the first campaign seen this session.
+  channel          String
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmTerm          String?
+  utmContent       String?
+  firstUtmSource   String?
+  firstUtmMedium   String?
+  firstUtmCampaign String?
+  referrer         String?
+  landingPage      String?
+  device           String?
+  // Salted hash, for rate limiting only; the raw IP is never stored.
+  ipHash           String?
+  submissions      Int         @default(1)
+  // Assignment, done in the CMS. Reassigning resets the notification fields.
+  counsellorId     String?
+  counsellor       Counsellor? @relation(fields: [counsellorId], references: [id], onDelete: SetNull)
+  assignedAt       DateTime?
+  assignedById     String?
+  assignedBy       User?       @relation(fields: [assignedById], references: [id], onDelete: SetNull)
+  // The counsellor's WhatsApp alert: when it was sent, or why it was not.
+  notifiedAt       DateTime?
+  notifyError      String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  // Set when the optional webhook (LEAD_WEBHOOK_URL) accepted the latest version.
+  deliveredAt      DateTime?
+
+  @@index([createdAt])
+  @@index([whatsapp, createdAt])
+  @@index([ipHash, createdAt])
+  @@index([counsellorId, createdAt])
+  @@map("lead")
+}
